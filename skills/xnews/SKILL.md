@@ -85,6 +85,14 @@ Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/] [--title 
   bareng logo M dan muncul nyempil di tengah bawah). Pakai scan grup kolom
   terang, ambil grup yang benar, crop persis bbox-nya.
 
+## Research & Caption IG (WAJIB baca)
+Kalau user minta caption IG bareng video, baca `references/caption-research.md`.
+Alurnya: agent research pakai `web_search` tool Hermes (gratis, tanpa API
+key) — cari konteks berita dari judul, verifikasi dari 2-3 sumber, lalu
+tulis caption pakai template gaya m4cro.news (paragraf fakta → konteks →
+analisis → "Gimana nih pendapat mu?" → CTA → hashtag #news #ekonomi
+#geopolitik #fyp). Contoh lengkap ada di file referensi.
+
 ## Verification
 Render testsrc2 5s, ffprobe stream duration harus 5.0s & nb_frames~150,
 lalu vision_analyze frame: judul atas (regular) / 16:9 tengah-atas /
