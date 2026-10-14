@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+skills/xnews/work/
+skills/xnews/output/
+.deepgram_key
+.env
