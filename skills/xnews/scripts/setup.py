@@ -75,7 +75,7 @@ def check_assets() -> bool:
     print("Cek aset template (logo, font)...")
     assets = SKILL_DIR / "assets"
     needed = ["Poppins-Bold.ttf", "Poppins-Regular.ttf",
-              "assets_gear.png", "assets_logoM.png", "assets_glow.png"]
+              "assets_gear.png", "assets_logoM_clean.png", "assets_glow.png"]
     missing = [f for f in needed if not (assets / f).exists()]
     if missing:
         print(f"  [GAGAL] aset hilang: {missing}")

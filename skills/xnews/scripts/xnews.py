@@ -1,14 +1,11 @@
-"""xnews: X/Twitter video -> template 9:16 news repost.
+"""xnews: YouTube/X video -> template 9:16 news repost.
 
 - Sumber: x.com (yt-dlp extractor 'twitter')
 - Judul: teks tweet (description); kalau kosong -> transkrip Deepgram
-- <=180s: full; >180s: potong per segmen (default 60s)
-- Sumber (SC: X @handle) + tanggal render: kiri bawah video
+- <=180s: full; >180s: potong per segmen (default 60s, snap ke jeda kalimat)
+- Kredit: nama akun + tanggal upload (format dd/mm/yyyy)
 
 Pakai: python xnews.py <url> [--seg 60] [--out output/]
-
-Env vars (opsional):
-  DEEPGRAM_KEY  - API key Deepgram (atau taruh di ~/.deepgram_key)
 """
 import json
 import os
@@ -96,6 +93,11 @@ def transcribe_fallback(video: Path) -> str:
     return d["results"]["channels"][0]["alternatives"][0]["transcript"]
 
 
+def fmt_date(d: str) -> str:
+    m = re.match(r"(\d{4})(\d{2})(\d{2})", d or "")
+    return f"{m[3]}/{m[2]}/{m[1]}" if m else ""
+
+
 def split_points(duration: float, seg: float) -> list:
     """Kalau <= MAX_FULL_SEC: satu segmen full. Kalau lebih: potong per `seg`."""
     if duration <= MAX_FULL_SEC or duration <= 0:
@@ -105,6 +107,37 @@ def split_points(duration: float, seg: float) -> list:
         pts.append((t, min(t + seg, duration)))
         t += seg
     return pts
+
+
+def translate_title(text: str) -> str:
+    """Terjemah judul ke bahasa Indonesia via LLM. Fallback: teks asli.
+
+    Endpoint bisa di-set via env XNEWS_LLM_URL / XNEWS_LLM_MODEL.
+    """
+    import os
+    import urllib.request
+    url = os.environ.get(
+        "XNEWS_LLM_URL", "http://54.169.236.224:20128/v1/chat/completions")
+    model = os.environ.get("XNEWS_LLM_MODEL", "nous-research/tencent/hy3:free")
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system",
+             "content": "Terjemahkan judul berita berikut ke Bahasa Indonesia. "
+                        "Output HANYA hasil terjemahan, tanpa penjelasan apa pun."},
+            {"role": "user", "content": text},
+        ],
+        "temperature": 0.3,
+    }
+    try:
+        req = urllib.request.Request(
+            url, data=json.dumps(payload).encode(),
+            headers={"Content-Type": "application/json"})
+        r = urllib.request.urlopen(req, timeout=30)
+        d = json.loads(r.read())
+        return d["choices"][0]["message"]["content"].strip()[:220]
+    except Exception:
+        return text  # fallback: pakai teks asli
 
 
 def main():
@@ -131,9 +164,16 @@ def main():
     if len(title) < 20:
         print("    tweet kosong/pendek -> transkrip audio...")
         title = transcribe_fallback(video)
-    print(f"    judul: {title[:80]}...")
+    print(f"    judul (EN): {title[:80]}")
+    if "--title" in sys.argv:
+        title_id = sys.argv[sys.argv.index("--title") + 1]
+        print("    judul (ID): manual override")
+    else:
+        title_id = translate_title(title)
+    print(f"    judul (ID): {title_id[:80]}")
 
     src_line = f"SC: X @{meta['uploader']}"
+    handle_lines = ["TikTok: m4croNews", "IG: m4croNews"]
     today = _date.today().strftime("%d/%m/%Y")
     outdir.mkdir(parents=True, exist_ok=True)
     pts = split_points(meta["duration"], seg)
@@ -142,7 +182,7 @@ def main():
     made = []
     for i, (s, e) in enumerate(pts, 1):
         name = outdir / f"{meta['id']}_{i:02d}.mp4" if len(pts) > 1 else outdir / f"{meta['id']}.mp4"
-        render(str(video), title, src_line, today,
+        render(str(video), title_id, src_line, handle_lines, today,
                str(name), start=s, end=e)
         made.append(name)
         print(f"    -> {name}")

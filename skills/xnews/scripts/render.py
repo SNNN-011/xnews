@@ -1,7 +1,6 @@
 """Render template 9:16 news-repost (m4croNews style): logo gear-$ kiri atas,
-video 16:9 di atas-tengah, judul regular di zona kosong, sumber+tanggal kiri
-bawah video, logo M kanan bawah, glow kiri bawah. PIL overlay -> ffmpeg."""
-import platform
+video 16:9 di atas-tengah, judul Bahasa Indonesia, sumber+tanggal kiri bawah
+video, teks TikTok/IG bawah, logo M kanan bawah, glow kiri bawah."""
 from pathlib import Path
 
 import numpy as np
@@ -22,16 +21,20 @@ EMOJI_FONT = next((p for p in _EMOJI_CANDIDATES if Path(p).exists()), None)
 W, H = 1080, 1920
 VID_W, VID_H = 1025, 577          # video 16:9 (margin kiri-kanan ~28px)
 VID_LEFT, VID_TOP = 27, 602
+VID_BOTTOM = VID_TOP + VID_H      # 1179 — batas bawah video
 TITLE_ZONE_TOP = 320              # zona judul: diturunin, deket video
 TITLE_ZONE_BOTTOM = 565
 SRC_Y = 1215                      # sumber: kiri bawah video
 DATE_Y = 1262                     # tanggal render: di bawah sumber
 F_SRC = 30
 F_DATE = 26
+HANDLE_Y = 1770                   # baris 1 teks handle (TikTok/IG)
+HANDLE_LINE_H = 50
+F_HANDLE = 34
 GEAR_BOX = (4, 0, 212, 180)       # x, y, w, h
-LOGO_M_BOX = (478, 1720, 490, 135)
+LOGO_M_BOX = (870, 1720, 95, 95)  # logo M bersih 80x78, ~94px di canvas
 MAX_TITLE_W = 960
-FONT_STEPS = [40, 36, 32, 28, 26]
+FONT_STEPS = [34, 30, 27, 24, 22]
 
 
 def _load(px: int, bold: bool = True) -> ImageFont.FreeTypeFont:
@@ -103,8 +106,8 @@ def _make_glow(size: int = 520, max_alpha: int = 48) -> Image.Image:
     return Image.fromarray(rgba, "RGBA")
 
 
-def build_overlay(title: str, src_line: str, date_str: str,
-                  out_png: Path) -> Path:
+def build_overlay(title: str, src_line: str, handle_lines: list,
+                  date_str: str, out_png: Path) -> Path:
     """Gambar semua elemen template di canvas transparan 1080x1920."""
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -120,7 +123,7 @@ def build_overlay(title: str, src_line: str, date_str: str,
             if EMOJI_FONT:
                 f_emoji = ImageFont.truetype(EMOJI_FONT, px)
             else:
-                f_emoji = font  # fallback: pakai Poppins (emoji jadi kotak)
+                f_emoji = font  # fallback: emoji jadi kotak kalau ga ada font emoji
             lines = _wrap(d, title, font, f_emoji, MAX_TITLE_W)
             total_h = len(lines) * int(px * 1.3)
             if len(lines) <= 4 and total_h <= zone_h:
@@ -140,7 +143,7 @@ def build_overlay(title: str, src_line: str, date_str: str,
         img.alpha_composite(gear, (GEAR_BOX[0], GEAR_BOX[1]))
 
     # --- logo M kanan bawah ---
-    m_path = ASSET_DIR / "assets_logoM.png"
+    m_path = ASSET_DIR / "assets_logoM_clean.png"
     if m_path.exists():
         logo_m = Image.open(m_path).convert("RGBA").resize(
             (LOGO_M_BOX[2], LOGO_M_BOX[3]), Image.LANCZOS)
@@ -164,17 +167,24 @@ def build_overlay(title: str, src_line: str, date_str: str,
     _left(SRC_Y, src_line, f_src, (225, 225, 225, 255))
     _left(DATE_Y, date_str, f_date, (170, 170, 170, 255))
 
+    # --- teks handle bawah (TikTok/IG), rata tengah, font regular ---
+    f_handle = _load(F_HANDLE, bold=False)
+    for i, line in enumerate(handle_lines[:2]):
+        d.text(((W - d.textlength(line, font=f_handle)) / 2,
+                HANDLE_Y + i * HANDLE_LINE_H), line,
+               font=f_handle, fill=(240, 240, 240, 255))
+
     out_png.parent.mkdir(parents=True, exist_ok=True)
     img.save(out_png)
     return out_png
 
 
-def render(video_in: str, title: str, src_line: str,
+def render(video_in: str, title: str, src_line: str, handle_lines: list,
            date_str: str, out_path: str, start: float = None,
            end: float = None) -> str:
     """Render satu segmen video jadi 9:16 dengan template. Re-encode video."""
     out_png = Path(out_path).with_suffix(".overlay.png")
-    build_overlay(title, src_line, date_str, out_png)
+    build_overlay(title, src_line, handle_lines, date_str, out_png)
 
     seek = []
     if start is not None:

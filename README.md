@@ -36,13 +36,18 @@ python skills/xnews/scripts/xnews.py https://x.com/user/status/xxxxx
 ### Opsi
 
 ```bash
-python skills/xnews/scripts/xnews.py <url> --seg 45 --out hasil/
+python skills/xnews/scripts/xnews.py <url> --seg 45 --out hasil/ --title "Judul Bahasa Indonesia"
 ```
 
 | Flag | Default | Fungsi |
 |------|---------|--------|
 | `--seg` | 60 | Panjang segmen kalau video >3 menit |
 | `--out` | `output/` | Folder tujuan |
+| `--title` | (auto) | Override judul — pakai teks ini apa adanya (buat judul Bahasa Indonesia manual) |
+
+**Judul Bahasa Indonesia:** judul default diterjemahkan otomatis via LLM
+(kalau endpoint tersedia). Kalau tidak ada akses LLM, pakai `--title`
+buat tulis judul Indonesia manual.
 
 ## Untuk user Hermes Agent
 

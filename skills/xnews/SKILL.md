@@ -36,23 +36,28 @@ API key (opsional, cuma buat fallback transkrip kalau tweet kosong).
 2. Judul: tweet description (URL stripped, 220 char cap). Kalau <20 char ->
    Deepgram nova-2 transcribe fallback (key: env DEEPGRAM_KEY atau
    ~/.deepgram_key).
-3. Duration rule: <=180s single full render; >180s split per segment
+3. **Translate judul ke Bahasa Indonesia** via LLM (OmniRoute default, bisa
+   di-set env XNEWS_LLM_URL / XNEWS_LLM_MODEL). Fallback: teks asli. Manual
+   override: `--title "judul indonesia"`.
+4. Duration rule: <=180s single full render; >180s split per segment
    (`--seg 60` default) -> multiple numbered files.
-4. Render 1080x1920: video 1025x577 (16:9) at top-middle (VID_LEFT=27,
-   VID_TOP=602), headline Poppins REGULAR (auto-shrink 40->26px, max 4
+5. Render 1080x1920: video 1025x577 (16:9) at top-middle (VID_LEFT=27,
+   VID_TOP=602), headline Poppins REGULAR (auto-shrink 34->22px, max 4
    lines) in zone y 320-565, "SC: X @handle" + dd/mm/yyyy (tanggal RENDER)
-   rata kiri di bawah video, gear-$ logo kiri atas, logo M kanan bawah,
-   glow kiri bawah.
+   rata kiri di bawah video, "TikTok: m4croNews" / "IG: m4croNews" rata
+   tengah bawah (SEKALI saja), gear-$ logo kiri atas, logo M bersih kanan
+   bawah, glow kiri bawah.
 
-Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/]`
+Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/] [--title "..."]`
 (Python yang punya Pillow+numpy — Hermes venv atau sistem python)
 
 ## Layout constants (render.py) — hasil ukur pixel dari template
 - VID 1025x577 at (27, 602) — margin kiri-kanan ~28px, video di atas-tengah
 - TITLE_ZONE 320-565, Poppins Regular (BUKAN bold — user minta), FONT_STEPS
-  [40,36,32,28,26]
+  [34,30,27,24,22]
 - SRC_Y=1215 / DATE_Y=1262, rata KIRI (left_x = VID_LEFT), F_SRC=30 F_DATE=26
-- GEAR_BOX=(4,0,212,180), LOGO_M_BOX=(478,1720,490,135)
+- HANDLE_Y=1770 / HANDLE_LINE_H=50, F_HANDLE=34, Poppins regular, rata tengah
+- GEAR_BOX=(4,0,212,180), LOGO_M_BOX=(870,1720,95,95)
 - Glow: assets_glow.png dari template asli, resize 360x276, posisi kiri bawah
 
 ## Customisasi template
@@ -75,6 +80,10 @@ Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/]`
   (Linux tanpa Noto), emoji jadi kotak — install fonts-noto-color-emoji.
 - Path di repo portabel: aset relatif ke script dir
   (`SCRIPT_DIR.parent / "assets"`), emoji font auto-detect per-OS.
+- Ekstrak aset dari screenshot template: CEK bbox sebelum crop — crop
+  longgar bisa ikut ngebawa teks lain (sisa "m4croNews" pernah ke-crop
+  bareng logo M dan muncul nyempil di tengah bawah). Pakai scan grup kolom
+  terang, ambil grup yang benar, crop persis bbox-nya.
 
 ## Verification
 Render testsrc2 5s, ffprobe stream duration harus 5.0s & nb_frames~150,
