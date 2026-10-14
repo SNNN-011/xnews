@@ -15,6 +15,9 @@ metadata:
 User wants to repost X/Twitter video news as 9:16 vertical: original 16:9
 video centered-top on black canvas, headline from tweet text, source credit
 and render date below video, channel branding (gear-$ logo, M logo, glow).
+
+**OUTPUT WAJIB: video 9:16 + caption IG** — dikerjain bareng dalam satu
+request, biar user tinggal post ke IG tanpa langkah tambahan.
 Repo: `skills/xnews/` — `scripts/xnews.py` (orchestrator),
 `scripts/render.py` (template), `scripts/setup.py` (auto-install).
 
@@ -85,13 +88,20 @@ Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/] [--title 
   bareng logo M dan muncul nyempil di tengah bawah). Pakai scan grup kolom
   terang, ambil grup yang benar, crop persis bbox-nya.
 
-## Research & Caption IG (WAJIB baca)
-Kalau user minta caption IG bareng video, baca `references/caption-research.md`.
-Alurnya: agent research pakai `web_search` tool Hermes (gratis, tanpa API
-key) — cari konteks berita dari judul, verifikasi dari 2-3 sumber, lalu
-tulis caption pakai template gaya m4cro.news (paragraf fakta → konteks →
-analisis → "Gimana nih pendapat mu?" → CTA → hashtag #news #ekonomi
-#geopolitik #fyp). Contoh lengkap ada di file referensi.
+## Research & Caption IG (BAGIAN DARI OUTPUT — bukan opsional)
+Setiap request video WAJIB menghasilkan video + caption IG sekaligus.
+Baca `references/caption-research.md` sebelum nulis caption.
+
+Alur lengkap satu request:
+1. Render video (xnews.py + render.py) — verifikasi visual pakai
+   vision_analyze sebelum lapor
+2. Research berita pakai `web_search` tool Hermes (gratis, tanpa API key)
+   — cari konteks dari judul video, verifikasi dari 2-3 sumber independen
+3. Tulis caption pakai template gaya m4cro.news (paragraf fakta →
+   konteks → analisis → "Gimana nih pendapat mu?" → CTA follow →
+   hashtag #news #ekonomi #geopolitik #fyp). Contoh lengkap ada di
+   file referensi.
+4. Kirim ke user: MEDIA:<video> + teks caption siap copy-paste ke IG
 
 ## Verification
 Render testsrc2 5s, ffprobe stream duration harus 5.0s & nb_frames~150,

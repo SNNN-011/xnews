@@ -49,12 +49,17 @@ python skills/xnews/scripts/xnews.py <url> --seg 45 --out hasil/ --title "Judul 
 (kalau endpoint tersedia). Kalau tidak ada akses LLM, pakai `--title`
 buat tulis judul Indonesia manual.
 
-## Caption IG
+## Output: Video + Caption IG
 
-Kalau dipakai dari Hermes Agent, agent bisa riset beritanya (via
-`web_search` built-in, gratis tanpa API key) dan nulis caption IG lengkap
-dengan gaya m4cro.news: fakta → konteks → analisis → CTA → hashtag.
-Template dan contoh ada di `skills/xnews/references/caption-research.md`.
+Setiap pemrosesan menghasilkan **dua hal sekaligus**:
+
+1. **Video 9:16** siap upload (`output/<video-id>.mp4`)
+2. **Caption IG** lengkap (dari Hermes Agent setelah riset berita via
+   `web_search` built-in — gratis tanpa API key) dengan gaya m4cro.news:
+   fakta → konteks → analisis → CTA → hashtag
+
+User tinggal upload video + copy-paste caption ke IG. Template dan contoh
+ada di `skills/xnews/references/caption-research.md`.
 
 ## Untuk user Hermes Agent
 
