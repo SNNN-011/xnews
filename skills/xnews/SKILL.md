@@ -39,9 +39,10 @@ API key (opsional, cuma buat fallback transkrip kalau tweet kosong).
 2. Judul: tweet description (URL stripped, 220 char cap). Kalau <20 char ->
    Deepgram nova-2 transcribe fallback (key: env DEEPGRAM_KEY atau
    ~/.deepgram_key).
-3. **Translate judul ke Bahasa Indonesia** via LLM (OmniRoute default, bisa
-   di-set env XNEWS_LLM_URL / XNEWS_LLM_MODEL). Fallback: teks asli. Manual
-   override: `--title "judul indonesia"`.
+3. Judul: teks tweet apa adanya. **Agent (Hermes) yang translate ke
+   Bahasa Indonesia pakai LLM-nya sendiri**, lalu render ulang pakai
+   `--title "<judul ID>"`. Script xnews.py TIDAK manggil LLM apa pun —
+   semua kerja LLM (translate, research, caption) dikerjain agent.
 4. Duration rule: <=180s single full render; >180s split per segment
    (`--seg 60` default) -> multiple numbered files.
 5. Render 1080x1920: video 1025x577 (16:9) at top-middle (VID_LEFT=27,

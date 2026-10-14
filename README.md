@@ -43,11 +43,11 @@ python skills/xnews/scripts/xnews.py <url> --seg 45 --out hasil/ --title "Judul 
 |------|---------|--------|
 | `--seg` | 60 | Panjang segmen kalau video >3 menit |
 | `--out` | `output/` | Folder tujuan |
-| `--title` | (auto) | Override judul — pakai teks ini apa adanya (buat judul Bahasa Indonesia manual) |
+| `--title` | (teks tweet) | Override judul — dipakai agent buat judul Bahasa Indonesia hasil translate |
 
-**Judul Bahasa Indonesia:** judul default diterjemahkan otomatis via LLM
-(kalau endpoint tersedia). Kalau tidak ada akses LLM, pakai `--title`
-buat tulis judul Indonesia manual.
+**Judul Bahasa Indonesia:** script render pakai teks tweet apa adanya.
+Agent Hermes yang translate judul ke Bahasa Indonesia pakai LLM-nya
+sendiri, lalu render ulang dengan `--title "judul Indonesia"`.
 
 ## Output: Video + Caption IG
 

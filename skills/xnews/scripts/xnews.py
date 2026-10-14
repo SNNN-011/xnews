@@ -1,11 +1,17 @@
-"""xnews: YouTube/X video -> template 9:16 news repost.
+"""xnews: X/Twitter video -> template 9:16 news repost.
 
 - Sumber: x.com (yt-dlp extractor 'twitter')
-- Judul: teks tweet (description); kalau kosong -> transkrip Deepgram
-- <=180s: full; >180s: potong per segmen (default 60s, snap ke jeda kalimat)
-- Kredit: nama akun + tanggal upload (format dd/mm/yyyy)
+- Judul: teks tweet (description); kalau kosong -> transkrip Deepgram.
+  JUDUL BAHASA INDONESIA: agent Hermes yang translate (dia udah punya LLM),
+  lalu render ulang pakai --title. Script ini ga manggil LLM apa pun.
+- <=180s: full; >180s: potong per segmen (default 60s)
+- Sumber (SC: X @handle) + tanggal render: kiri bawah video
+- Teks TikTok/IG bawah, logo gear-$ kiri atas, logo M kanan bawah, glow kiri bawah
 
-Pakai: python xnews.py <url> [--seg 60] [--out output/]
+Pakai: python xnews.py <url> [--seg 60] [--out output/] [--title "judul"]
+
+Env vars (opsional):
+  DEEPGRAM_KEY  - API key Deepgram (atau taruh di ~/.deepgram_key)
 """
 import json
 import os
@@ -109,37 +115,6 @@ def split_points(duration: float, seg: float) -> list:
     return pts
 
 
-def translate_title(text: str) -> str:
-    """Terjemah judul ke bahasa Indonesia via LLM. Fallback: teks asli.
-
-    Endpoint bisa di-set via env XNEWS_LLM_URL / XNEWS_LLM_MODEL.
-    """
-    import os
-    import urllib.request
-    url = os.environ.get(
-        "XNEWS_LLM_URL", "http://54.169.236.224:20128/v1/chat/completions")
-    model = os.environ.get("XNEWS_LLM_MODEL", "nous-research/tencent/hy3:free")
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system",
-             "content": "Terjemahkan judul berita berikut ke Bahasa Indonesia. "
-                        "Output HANYA hasil terjemahan, tanpa penjelasan apa pun."},
-            {"role": "user", "content": text},
-        ],
-        "temperature": 0.3,
-    }
-    try:
-        req = urllib.request.Request(
-            url, data=json.dumps(payload).encode(),
-            headers={"Content-Type": "application/json"})
-        r = urllib.request.urlopen(req, timeout=30)
-        d = json.loads(r.read())
-        return d["choices"][0]["message"]["content"].strip()[:220]
-    except Exception:
-        return text  # fallback: pakai teks asli
-
-
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
@@ -164,13 +139,13 @@ def main():
     if len(title) < 20:
         print("    tweet kosong/pendek -> transkrip audio...")
         title = transcribe_fallback(video)
-    print(f"    judul (EN): {title[:80]}")
     if "--title" in sys.argv:
-        title_id = sys.argv[sys.argv.index("--title") + 1]
-        print("    judul (ID): manual override")
+        title = sys.argv[sys.argv.index("--title") + 1]
+        print("    judul: manual override (dari --title)")
     else:
-        title_id = translate_title(title)
-    print(f"    judul (ID): {title_id[:80]}")
+        print("    judul: teks tweet asli (translate sendiri pakai LLM agent,")
+        print("           lalu render ulang dengan --title kalau perlu)")
+    print(f"    judul: {title[:80]}")
 
     src_line = f"SC: X @{meta['uploader']}"
     handle_lines = ["TikTok: m4croNews", "IG: m4croNews"]
@@ -182,7 +157,7 @@ def main():
     made = []
     for i, (s, e) in enumerate(pts, 1):
         name = outdir / f"{meta['id']}_{i:02d}.mp4" if len(pts) > 1 else outdir / f"{meta['id']}.mp4"
-        render(str(video), title_id, src_line, handle_lines, today,
+        render(str(video), title, src_line, handle_lines, today,
                str(name), start=s, end=e)
         made.append(name)
         print(f"    -> {name}")
