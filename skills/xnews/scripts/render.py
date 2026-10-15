@@ -1,29 +1,20 @@
 """Render template 9:16 news-repost (m4croNews style): logo gear-$ kiri atas,
-video 16:9 di atas-tengah, judul Bahasa Indonesia, sumber+tanggal kiri bawah
-video, teks TikTok/IG bawah, logo M kanan bawah, glow kiri bawah."""
+video 16:9 di atas-tengah, judul opsional di zona kosong, teks handle bawah,
+logo M kanan bawah, glow kiri bawah. PIL overlay -> ffmpeg."""
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-SCRIPT_DIR = Path(__file__).parent
-ASSET_DIR = SCRIPT_DIR.parent / "assets"   # skills/xnews/assets/
-FONT_DIR = ASSET_DIR                        # Poppins ada di assets/
-
-# emoji font per-OS
-_EMOJI_CANDIDATES = [
-    r"C:\Windows\Fonts\seguiemj.ttf",                        # Windows
-    "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf",     # Linux
-    "/System/Library/Fonts/Apple Color Emoji.ttc",           # macOS
-    "/usr/share/fonts/Apple Color Emoji.ttf",
-]
-EMOJI_FONT = next((p for p in _EMOJI_CANDIDATES if Path(p).exists()), None)
+FONT_DIR = Path(__file__).parent / "fonts"
+ASSET_DIR = Path(__file__).parent
+EMOJI_FONT = Path(r"C:\Windows\Fonts\seguiemj.ttf")
 W, H = 1080, 1920
 VID_W, VID_H = 1025, 577          # video 16:9 (margin kiri-kanan ~28px)
 VID_LEFT, VID_TOP = 27, 602
 VID_BOTTOM = VID_TOP + VID_H      # 1179 — batas bawah video
-TITLE_ZONE_TOP = 320              # zona judul: diturunin, deket video
-TITLE_ZONE_BOTTOM = 565
+TITLE_ZONE_TOP = 360              # zona judul: diturunin lagi, deket video
+TITLE_ZONE_BOTTOM = 585
 SRC_Y = 1215                      # sumber: kiri bawah video
 DATE_Y = 1262                     # tanggal render: di bawah sumber
 F_SRC = 30
@@ -120,10 +111,7 @@ def build_overlay(title: str, src_line: str, handle_lines: list,
         zone_h = TITLE_ZONE_BOTTOM - TITLE_ZONE_TOP
         for px in FONT_STEPS:
             font = _load(px, bold=False)
-            if EMOJI_FONT:
-                f_emoji = ImageFont.truetype(EMOJI_FONT, px)
-            else:
-                f_emoji = font  # fallback: emoji jadi kotak kalau ga ada font emoji
+            f_emoji = ImageFont.truetype(str(EMOJI_FONT), px)
             lines = _wrap(d, title, font, f_emoji, MAX_TITLE_W)
             total_h = len(lines) * int(px * 1.3)
             if len(lines) <= 4 and total_h <= zone_h:
