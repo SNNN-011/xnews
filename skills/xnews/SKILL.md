@@ -61,7 +61,11 @@ Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/] [--title 
 
 ## Layout constants (render.py) — hasil ukur pixel dari template
 - VID 1025x577 at (27, 602) — margin kiri-kanan ~28px, video di atas-tengah
-- TITLE_ZONE 400-600, Poppins Regular (BUKAN bold — user minta), FONT_STEPS
+- Layout LANDSCAPE: TITLE_ZONE 400-600, video slot 1025x577 at (27,602)
+- Layout PORTRAIT: video slot besar 900x1240 at (0,380) — video 2x lebih besar;
+  TITLE_ZONE 100-360, SC+ tanggal rata TENGAH di y 1650-1696, handle tetap 1770
+- Video portrait: blur-fill (blur bg 1080x1240 + foreground utuh fit box),
+  landscape: scale+crop penuh slot (BUKAN bold — user minta), FONT_STEPS
   [34,30,27,24,22]
 - SRC_Y=1215 / DATE_Y=1262, rata KIRI (left_x = VID_LEFT), F_SRC=30 F_DATE=26
 - Format sumber: X -> "SC: X@handle" (tanpa spasi, uploader_id);

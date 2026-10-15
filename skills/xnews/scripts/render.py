@@ -10,13 +10,25 @@ FONT_DIR = Path(__file__).parent / "fonts"
 ASSET_DIR = Path(__file__).parent
 EMOJI_FONT = Path(r"C:\Windows\Fonts\seguiemj.ttf")
 W, H = 1080, 1920
+
+# --- layout LANDSCAPE (default) ---
 VID_W, VID_H = 1025, 577          # video 16:9 (margin kiri-kanan ~28px)
 VID_LEFT, VID_TOP = 27, 602
-VID_BOTTOM = VID_TOP + VID_H      # 1179 — batas bawah video
-TITLE_ZONE_TOP = 400              # zona judul: diturunin lagi, deket video
+TITLE_ZONE_TOP = 400              # zona judul: deket video
 TITLE_ZONE_BOTTOM = 600
 SRC_Y = 1215                      # sumber: kiri bawah video
 DATE_Y = 1262                     # tanggal render: di bawah sumber
+SRC_ALIGN_CENTER = False
+
+# --- layout PORTRAIT: slot video jauh lebih besar ---
+P_VID_W, P_VID_H = 900, 1240      # box maksimum (fit inside, ga crop)
+P_VID_TOP = 380                   # atas slot video portrait
+P_TITLE_ZONE_TOP = 100
+P_TITLE_ZONE_BOTTOM = 360
+P_SRC_Y = 1650                    # sumber + tanggal: di bawah video, rata tengah
+P_DATE_Y = 1696
+P_SRC_ALIGN_CENTER = True
+
 F_SRC = 30
 F_DATE = 26
 HANDLE_Y = 1770                   # baris 1 teks handle (TikTok/IG)
@@ -98,17 +110,28 @@ def _make_glow(size: int = 520, max_alpha: int = 48) -> Image.Image:
 
 
 def build_overlay(title: str, src_line: str, handle_lines: list,
-                  date_str: str, out_png: Path) -> Path:
+                  date_str: str, out_png: Path,
+                  portrait: bool = False) -> Path:
     """Gambar semua elemen template di canvas transparan 1080x1920."""
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
+
+    # zona & posisi teks tergantung orientasi
+    if portrait:
+        tz_top, tz_bot = P_TITLE_ZONE_TOP, P_TITLE_ZONE_BOTTOM
+        src_y, date_y = P_SRC_Y, P_DATE_Y
+        src_center = P_SRC_ALIGN_CENTER
+    else:
+        tz_top, tz_bot = TITLE_ZONE_TOP, TITLE_ZONE_BOTTOM
+        src_y, date_y = SRC_Y, DATE_Y
+        src_center = SRC_ALIGN_CENTER
 
     # --- judul (opsional): di zona kosong antara logo & video ---
     if title:
         font = None
         f_emoji = None
         lines = []
-        zone_h = TITLE_ZONE_BOTTOM - TITLE_ZONE_TOP
+        zone_h = tz_bot - tz_top
         for px in FONT_STEPS:
             font = _load(px, bold=False)
             f_emoji = ImageFont.truetype(str(EMOJI_FONT), px)
@@ -117,7 +140,7 @@ def build_overlay(title: str, src_line: str, handle_lines: list,
             if len(lines) <= 4 and total_h <= zone_h:
                 break
         line_h = int(font.size * 1.3)
-        y = TITLE_ZONE_TOP + max(0, (zone_h - line_h * len(lines)) // 2)
+        y = tz_top + max(0, (zone_h - line_h * len(lines)) // 2)
         for line in lines:
             _draw_mixed(d, (W - _mixed_width(d, line, font, f_emoji)) / 2, y,
                         line, font, f_emoji)
@@ -144,16 +167,20 @@ def build_overlay(title: str, src_line: str, handle_lines: list,
             (360, 276), Image.LANCZOS)  # 300x230 diskalakan 1.2x
         img.alpha_composite(glow, (0, H - 276))
 
-    # --- teks kiri bawah video: sumber + tanggal render ---
+    # --- teks sumber + tanggal render di bawah video ---
     f_src = _load(F_SRC, bold=False)
     f_date = _load(F_DATE, bold=False)
-    left_x = VID_LEFT               # rata kiri mengikuti tepi kiri video
 
     def _left(y, text, font, fill):
-        d.text((left_x, y), text, font=font, fill=fill)
+        d.text((VID_LEFT, y), text, font=font, fill=fill)
 
-    _left(SRC_Y, src_line, f_src, (225, 225, 225, 255))
-    _left(DATE_Y, date_str, f_date, (170, 170, 170, 255))
+    def _center(y, text, font, fill):
+        d.text(((W - d.textlength(text, font=font)) / 2, y), text,
+               font=font, fill=fill)
+
+    put = _center if src_center else _left
+    put(src_y, src_line, f_src, (225, 225, 225, 255))
+    put(date_y, date_str, f_date, (170, 170, 170, 255))
 
     # --- teks handle bawah (TikTok/IG), rata tengah, font regular ---
     f_handle = _load(F_HANDLE, bold=False)
@@ -177,7 +204,8 @@ def render(video_in: str, title: str, src_line: str, handle_lines: list,
     penuh ke slot 16:9.
     """
     out_png = Path(out_path).with_suffix(".overlay.png")
-    build_overlay(title, src_line, handle_lines, date_str, out_png)
+    build_overlay(title, src_line, handle_lines, date_str, out_png,
+                  portrait=portrait)
 
     seek = []
     if start is not None:
@@ -185,26 +213,28 @@ def render(video_in: str, title: str, src_line: str, handle_lines: list,
     to = ["-to", f"{end:.3f}"] if end is not None else []
 
     if portrait:
-        # blur-fill: background = video di-zoom penuh + blur; foreground =
-        # video utuh fit tinggi slot, rata tengah
+        # slot portrait besar (900x1240): blur background 1080x1240,
+        # foreground video utuh fit dalam box, rata tengah
         vid_fc = (
             "[0:v]fps=30,split[pa][pb];"
-            "[pa]scale={vw}:{vh}:force_original_aspect_ratio=increase,"
-            "crop={vw}:{vh},gblur=sigma=40[bgv];"
-            "[pb]scale=-2:{vh}:force_original_aspect_ratio=decrease[fgv];"
+            "[pa]scale={W}:{ph}:force_original_aspect_ratio=increase,"
+            "crop={W}:{ph},gblur=sigma=40[bgv];"
+            "[pb]scale={pw}:{ph}:force_original_aspect_ratio=decrease[fgv];"
             "[bgv][fgv]overlay=(W-w)/2:0,setsar=1[v0];"
-        ).format(vw=VID_W, vh=VID_H)
+        ).format(W=W, ph=P_VID_H, pw=P_VID_W)
+        vl, vt = 0, P_VID_TOP
     else:
         vid_fc = (
             "[0:v]fps=30,scale={vw}:{vh}:force_original_aspect_ratio=increase,"
             "crop={vw}:{vh},setsar=1[v0];"
         ).format(vw=VID_W, vh=VID_H)
+        vl, vt = VID_LEFT, VID_TOP
 
     fc = (vid_fc +
           "color=c=black:s={W}x{H}[c];"
           "[c][v0]overlay={vl}:{vt}:shortest=1[v1];"
           "[v1][1:v]overlay=0:0,format=yuv420p[out]"
-          ).format(W=W, H=H, vl=VID_LEFT, vt=VID_TOP)
+          ).format(W=W, H=H, vl=vl, vt=vt)
 
     cmd = (["ffmpeg", "-y", "-loglevel", "error"] + seek +
            ["-i", video_in] + to +
