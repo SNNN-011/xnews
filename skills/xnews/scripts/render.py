@@ -19,15 +19,14 @@ TITLE_ZONE_BOTTOM = 600
 SRC_Y = 1215                      # sumber: kiri bawah video
 DATE_Y = 1262                     # tanggal render: di bawah sumber
 SRC_ALIGN_CENTER = False
+PORTRAIT_ZOOM = 1.35              # zoom foreground video portrait (1.0 = fit penuh, crop dikit)
 
-# --- layout PORTRAIT: slot video jauh lebih besar ---
-P_VID_W, P_VID_H = 900, 1240      # box maksimum (fit inside, ga crop)
-P_VID_TOP = 380                   # atas slot video portrait
-P_TITLE_ZONE_TOP = 100
-P_TITLE_ZONE_BOTTOM = 360
-P_SRC_Y = 1650                    # sumber + tanggal: di bawah video, rata tengah
-P_DATE_Y = 1696
-P_SRC_ALIGN_CENTER = True
+# --- layout PORTRAIT: sama dengan landscape (slot 16:9 tetap) ---
+P_TITLE_ZONE_TOP = TITLE_ZONE_TOP
+P_TITLE_ZONE_BOTTOM = TITLE_ZONE_BOTTOM
+P_SRC_Y = SRC_Y
+P_DATE_Y = DATE_Y
+P_SRC_ALIGN_CENTER = SRC_ALIGN_CENTER
 
 F_SRC = 30
 F_DATE = 26
@@ -213,16 +212,18 @@ def render(video_in: str, title: str, src_line: str, handle_lines: list,
     to = ["-to", f"{end:.3f}"] if end is not None else []
 
     if portrait:
-        # slot portrait besar (900x1240): blur background 1080x1240,
-        # foreground video utuh fit dalam box, rata tengah
+        # slot tetap 16:9: blur bg 1025x577, foreground video portrait
+        # di-zoom PORTRAIT_ZOOM (crop dikit atas-bawah) biar lebih besar
+        fg_h = int(VID_H * PORTRAIT_ZOOM)
         vid_fc = (
             "[0:v]fps=30,split[pa][pb];"
-            "[pa]scale={W}:{ph}:force_original_aspect_ratio=increase,"
-            "crop={W}:{ph},gblur=sigma=40[bgv];"
-            "[pb]scale={pw}:{ph}:force_original_aspect_ratio=decrease[fgv];"
+            "[pa]scale={vw}:{vh}:force_original_aspect_ratio=increase,"
+            "crop={vw}:{vh},gblur=sigma=40[bgv];"
+            "[pb]scale=-2:{fgh}:force_original_aspect_ratio=decrease,"
+            "crop=iw:{vh}:0:(ih-oh)/2[fgv];"
             "[bgv][fgv]overlay=(W-w)/2:0,setsar=1[v0];"
-        ).format(W=W, ph=P_VID_H, pw=P_VID_W)
-        vl, vt = 0, P_VID_TOP
+        ).format(vw=VID_W, vh=VID_H, fgh=fg_h)
+        vl, vt = VID_LEFT, VID_TOP
     else:
         vid_fc = (
             "[0:v]fps=30,scale={vw}:{vh}:force_original_aspect_ratio=increase,"
