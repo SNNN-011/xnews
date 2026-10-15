@@ -57,10 +57,30 @@ def fetch_meta(url: str) -> dict:
         "title": info.get("title") or "",
         "description": (info.get("description") or "").strip(),
         "uploader": info.get("uploader") or info.get("channel") or "unknown",
+        "uploader_id": info.get("uploader_id") or "",
+        "extractor": info.get("extractor") or "",
         "upload_date": info.get("upload_date") or "",
         "duration": float(info.get("duration") or 0),
         "url": url,
     }
+
+
+def build_src_line(meta: dict) -> str:
+    """Baris sumber video:
+    - X/Twitter: 'SC: X@handle' (tanpa spasi, pakai handle asli)
+    - YouTube: 'SC: Nama Channel' (tanpa prefix)
+    """
+    url = meta.get("url", "")
+    extractor = meta.get("extractor", "")
+    is_x = ("twitter" in extractor.lower()
+            or "x.com" in url or "twitter.com" in url)
+    if is_x:
+        handle = meta.get("uploader_id") or meta.get("uploader") or "unknown"
+        handle = handle.lstrip("@")
+        return f"SC: X@{handle}"
+    # YouTube (atau sumber lain): nama channel apa adanya
+    channel = meta.get("uploader") or "unknown"
+    return f"SC: {channel}"
 
 
 def download(url: str, vdir: Path) -> Path:
@@ -147,7 +167,7 @@ def main():
         print("           lalu render ulang dengan --title kalau perlu)")
     print(f"    judul: {title[:80]}")
 
-    src_line = f"SC: X @{meta['uploader']}"
+    src_line = build_src_line(meta)
     handle_lines = ["TikTok: m4croNews", "IG: m4croNews"]
     today = _date.today().strftime("%d/%m/%Y")
     outdir.mkdir(parents=True, exist_ok=True)

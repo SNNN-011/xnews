@@ -47,7 +47,11 @@ API key (opsional, cuma buat fallback transkrip kalau tweet kosong).
    (`--seg 60` default) -> multiple numbered files.
 5. Render 1080x1920: video 1025x577 (16:9) at top-middle (VID_LEFT=27,
    VID_TOP=602), headline Poppins REGULAR (auto-shrink 34->22px, max 4
-   lines) in zone y 320-565, "SC: X @handle" + dd/mm/yyyy (tanggal RENDER)
+   lines) in zone y 320-565, baris sumber + dd/mm/yyyy (tanggal RENDER)
+   rata kiri di bawah video. Format sumber (build_src_line):
+   - X/Twitter: "SC: X@handle" — TANPA spasi setelah X, pakai handle asli
+     (uploader_id, bukan nama display — Exilenova_plus bukan Exilenova+)
+   - YouTube/sumber lain: "SC: Nama Channel" — tanpa prefix X
    rata kiri di bawah video, "TikTok: m4croNews" / "IG: m4croNews" rata
    tengah bawah (SEKALI saja), gear-$ logo kiri atas, logo M bersih kanan
    bawah, glow kiri bawah.
@@ -60,6 +64,8 @@ Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/] [--title 
 - TITLE_ZONE 320-565, Poppins Regular (BUKAN bold — user minta), FONT_STEPS
   [34,30,27,24,22]
 - SRC_Y=1215 / DATE_Y=1262, rata KIRI (left_x = VID_LEFT), F_SRC=30 F_DATE=26
+- Format sumber: X -> "SC: X@handle" (tanpa spasi, uploader_id);
+  YouTube -> "SC: Nama Channel" (uploader)
 - HANDLE_Y=1770 / HANDLE_LINE_H=50, F_HANDLE=34, Poppins regular, rata tengah
 - GEAR_BOX=(4,0,212,180), LOGO_M_BOX=(870,1720,95,95)
 - Glow: assets_glow.png dari template asli, resize 360x276, posisi kiri bawah
