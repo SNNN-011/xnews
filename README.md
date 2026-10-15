@@ -4,8 +4,6 @@ Konversi video berita dari X/Twitter jadi konten vertikal 9:16 siap upload:
 video 16:9 di atas-tengah, judul dari teks tweet, kredit sumber + tanggal
 di kiri bawah video, branding channel (logo gear-$, logo M, glow).
 
-![contoh layout](docs/layout-example.png)
-
 ## Quick start
 
 ### 1. Install semua requirement (otomatis)
