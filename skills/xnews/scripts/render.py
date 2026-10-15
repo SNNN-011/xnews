@@ -19,6 +19,7 @@ TITLE_ZONE_BOTTOM = 600
 SRC_Y = 1215                      # sumber: kiri bawah video
 DATE_Y = 1262                     # tanggal render: di bawah sumber
 SRC_ALIGN_CENTER = False
+SRC_PAD = 55                      # geser SC+ tanggal ke kanan dari tepi kiri (aman Reels)
 PORTRAIT_ZOOM = 1.35              # zoom foreground video portrait (1.0 = fit penuh, crop dikit)
 
 # --- layout PORTRAIT: sama dengan landscape (slot 16:9 tetap) ---
@@ -171,7 +172,7 @@ def build_overlay(title: str, src_line: str, handle_lines: list,
     f_date = _load(F_DATE, bold=False)
 
     def _left(y, text, font, fill):
-        d.text((VID_LEFT, y), text, font=font, fill=fill)
+        d.text((VID_LEFT + SRC_PAD, y), text, font=font, fill=fill)
 
     def _center(y, text, font, fill):
         d.text(((W - d.textlength(text, font=font)) / 2, y), text,
