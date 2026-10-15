@@ -24,8 +24,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from render import render  # noqa: E402
 
-WORK = Path(__file__).parent.parent / "work"
-OUT = Path(__file__).parent.parent / "output"
+WORK = Path(__file__).parent / "work"
+OUT = Path(__file__).parent / "output"
 MAX_FULL_SEC = 180
 DEFAULT_SEG = 60
 
@@ -59,6 +59,8 @@ def fetch_meta(url: str) -> dict:
         "uploader": info.get("uploader") or info.get("channel") or "unknown",
         "uploader_id": info.get("uploader_id") or "",
         "extractor": info.get("extractor") or "",
+        "width": info.get("width") or 0,
+        "height": info.get("height") or 0,
         "upload_date": info.get("upload_date") or "",
         "duration": float(info.get("duration") or 0),
         "url": url,
@@ -149,7 +151,10 @@ def main():
     print(f"[1/4] metadata: {url}")
     meta = fetch_meta(url)
     vdir = WORK / meta["id"]
+    portrait = meta["width"] > 0 and meta["height"] > meta["width"]
+    orient = "PORTRAIT (blur-fill)" if portrait else "landscape (crop)"
     print(f"    durasi {meta['duration']:.0f}s | akun @{meta['uploader']} | {meta['upload_date']}")
+    print(f"    resolusi: {meta['width']}x{meta['height']} -> {orient}")
 
     print("[2/4] download video...")
     video = download(url, vdir)
@@ -178,7 +183,7 @@ def main():
     for i, (s, e) in enumerate(pts, 1):
         name = outdir / f"{meta['id']}_{i:02d}.mp4" if len(pts) > 1 else outdir / f"{meta['id']}.mp4"
         render(str(video), title, src_line, handle_lines, today,
-               str(name), start=s, end=e)
+               str(name), start=s, end=e, portrait=portrait)
         made.append(name)
         print(f"    -> {name}")
     print(f"SELESAI: {len(made)} file")

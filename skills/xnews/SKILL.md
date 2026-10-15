@@ -61,7 +61,7 @@ Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/] [--title 
 
 ## Layout constants (render.py) — hasil ukur pixel dari template
 - VID 1025x577 at (27, 602) — margin kiri-kanan ~28px, video di atas-tengah
-- TITLE_ZONE 360-585, Poppins Regular (BUKAN bold — user minta), FONT_STEPS
+- TITLE_ZONE 400-600, Poppins Regular (BUKAN bold — user minta), FONT_STEPS
   [34,30,27,24,22]
 - SRC_Y=1215 / DATE_Y=1262, rata KIRI (left_x = VID_LEFT), F_SRC=30 F_DATE=26
 - Format sumber: X -> "SC: X@handle" (tanpa spasi, uploader_id);

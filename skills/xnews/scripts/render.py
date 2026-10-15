@@ -13,8 +13,8 @@ W, H = 1080, 1920
 VID_W, VID_H = 1025, 577          # video 16:9 (margin kiri-kanan ~28px)
 VID_LEFT, VID_TOP = 27, 602
 VID_BOTTOM = VID_TOP + VID_H      # 1179 — batas bawah video
-TITLE_ZONE_TOP = 360              # zona judul: diturunin lagi, deket video
-TITLE_ZONE_BOTTOM = 585
+TITLE_ZONE_TOP = 400              # zona judul: diturunin lagi, deket video
+TITLE_ZONE_BOTTOM = 600
 SRC_Y = 1215                      # sumber: kiri bawah video
 DATE_Y = 1262                     # tanggal render: di bawah sumber
 F_SRC = 30
@@ -169,8 +169,13 @@ def build_overlay(title: str, src_line: str, handle_lines: list,
 
 def render(video_in: str, title: str, src_line: str, handle_lines: list,
            date_str: str, out_path: str, start: float = None,
-           end: float = None) -> str:
-    """Render satu segmen video jadi 9:16 dengan template. Re-encode video."""
+           end: float = None, portrait: bool = False) -> str:
+    """Render satu segmen video jadi 9:16 dengan template. Re-encode video.
+
+    portrait=True: video source potrait — pakai blur-fill (video utuh di
+    tengah, background blur dari video itu sendiri). Landscape: scale+crop
+    penuh ke slot 16:9.
+    """
     out_png = Path(out_path).with_suffix(".overlay.png")
     build_overlay(title, src_line, handle_lines, date_str, out_png)
 
@@ -179,13 +184,27 @@ def render(video_in: str, title: str, src_line: str, handle_lines: list,
         seek = ["-ss", f"{start:.3f}"]
     to = ["-to", f"{end:.3f}"] if end is not None else []
 
-    fc = (
-        "[0:v]fps=30,scale={vw}:{vh}:force_original_aspect_ratio=increase,"
-        "crop={vw}:{vh},setsar=1[v0];"
-        "color=c=black:s={W}x{H}[bg];"
-        "[bg][v0]overlay={vl}:{vt}:shortest=1[v1];"
-        "[v1][1:v]overlay=0:0,format=yuv420p[out]"
-    ).format(vw=VID_W, vh=VID_H, W=W, H=H, vl=VID_LEFT, vt=VID_TOP)
+    if portrait:
+        # blur-fill: background = video di-zoom penuh + blur; foreground =
+        # video utuh fit tinggi slot, rata tengah
+        vid_fc = (
+            "[0:v]fps=30,split[pa][pb];"
+            "[pa]scale={vw}:{vh}:force_original_aspect_ratio=increase,"
+            "crop={vw}:{vh},gblur=sigma=40[bgv];"
+            "[pb]scale=-2:{vh}:force_original_aspect_ratio=decrease[fgv];"
+            "[bgv][fgv]overlay=(W-w)/2:0,setsar=1[v0];"
+        ).format(vw=VID_W, vh=VID_H)
+    else:
+        vid_fc = (
+            "[0:v]fps=30,scale={vw}:{vh}:force_original_aspect_ratio=increase,"
+            "crop={vw}:{vh},setsar=1[v0];"
+        ).format(vw=VID_W, vh=VID_H)
+
+    fc = (vid_fc +
+          "color=c=black:s={W}x{H}[c];"
+          "[c][v0]overlay={vl}:{vt}:shortest=1[v1];"
+          "[v1][1:v]overlay=0:0,format=yuv420p[out]"
+          ).format(W=W, H=H, vl=VID_LEFT, vt=VID_TOP)
 
     cmd = (["ffmpeg", "-y", "-loglevel", "error"] + seek +
            ["-i", video_in] + to +
