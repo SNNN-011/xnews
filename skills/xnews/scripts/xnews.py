@@ -8,7 +8,7 @@
 - Sumber (SC: X @handle) + tanggal render: kiri bawah video
 - Teks TikTok/IG bawah, logo gear-$ kiri atas, logo M kanan bawah, glow kiri bawah
 
-Pakai: python xnews.py <url> [--seg 60] [--out output/] [--title "judul"]
+Pakai: python xnews.py <url> [--seg 60] [--out output/] [--title "judul"] [--wmsrc "CNN"]
 
 Env vars (opsional):
   DEEPGRAM_KEY  - API key Deepgram (atau taruh di ~/.deepgram_key)
@@ -67,20 +67,28 @@ def fetch_meta(url: str) -> dict:
     }
 
 
-def build_src_line(meta: dict) -> str:
-    """Baris sumber video:
-    - X/Twitter: 'SC: X@handle' (tanpa spasi, pakai handle asli)
-    - YouTube: 'SC: Nama Channel' (tanpa prefix)
+def build_src_line(meta: dict, wmsrc: str = "") -> str:
+    """Baris sumber video (wmsrc = nama sumber watermark asli, dibaca agent
+    dari frame video; repost YouTube biasanya ada):
+
+    - X + WM:        'SC: <wm> X@handle'
+    - X tanpa WM:    'SC: X@handle'
+    - YouTube + WM:  'SC: <wm>' (WM = nama channel sumber)
+    - YouTube tanpa WM: 'SC: <nama channel>'
     """
     url = meta.get("url", "")
     extractor = meta.get("extractor", "")
+    wm = (wmsrc or "").strip()
     is_x = ("twitter" in extractor.lower()
             or "x.com" in url or "twitter.com" in url)
     if is_x:
         handle = meta.get("uploader_id") or meta.get("uploader") or "unknown"
         handle = handle.lstrip("@")
-        return f"SC: X@{handle}"
+        core = f"X@{handle}"
+        return f"SC: {wm} {core}" if wm else f"SC: {core}"
     # YouTube (atau sumber lain): nama channel apa adanya
+    if wm:
+        return f"SC: {wm}"
     channel = meta.get("uploader") or "unknown"
     return f"SC: {channel}"
 
@@ -143,10 +151,13 @@ def main():
     url = sys.argv[1]
     seg = DEFAULT_SEG
     outdir = OUT
+    wmsrc = ""
     if "--seg" in sys.argv:
         seg = float(sys.argv[sys.argv.index("--seg") + 1])
     if "--out" in sys.argv:
         outdir = Path(sys.argv[sys.argv.index("--out") + 1])
+    if "--wmsrc" in sys.argv:
+        wmsrc = sys.argv[sys.argv.index("--wmsrc") + 1]
 
     print(f"[1/4] metadata: {url}")
     meta = fetch_meta(url)
@@ -172,7 +183,9 @@ def main():
         print("           lalu render ulang dengan --title kalau perlu)")
     print(f"    judul: {title[:80]}")
 
-    src_line = build_src_line(meta)
+    src_line = build_src_line(meta, wmsrc)
+    if wmsrc:
+        print(f"    sumber WM: {wmsrc} (dari --wmsrc)")
     handle_lines = ["TikTok: m4croNews", "IG: m4croNews"]
     today = _date.today().strftime("%d/%m/%Y")
     outdir.mkdir(parents=True, exist_ok=True)

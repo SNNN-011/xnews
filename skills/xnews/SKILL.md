@@ -43,20 +43,29 @@ API key (opsional, cuma buat fallback transkrip kalau tweet kosong).
    Bahasa Indonesia pakai LLM-nya sendiri**, lalu render ulang pakai
    `--title "<judul ID>"`. Script xnews.py TIDAK manggil LLM apa pun —
    semua kerja LLM (translate, research, caption) dikerjain agent.
+   **Watermark (WM):** agent WAJIB lihat frame video (vision) buat cari WM
+   sumber asli (video repost YouTube biasanya ada). Kalau ketemu, render
+   pakai `--wmsrc "<nama sumber di WM>"` biar masuk baris SC. Script tidak
+   bisa baca WM sendiri.
 4. Duration rule: <=180s single full render; >180s split per segment
    (`--seg 60` default) -> multiple numbered files.
 5. Render 1080x1920: video 1025x577 (16:9) at top-middle (VID_LEFT=27,
    VID_TOP=602), headline Poppins REGULAR (auto-shrink 34->22px, max 4
    lines) in zone y 320-565, baris sumber + dd/mm/yyyy (tanggal RENDER)
-   rata kiri di bawah video. Format sumber (build_src_line):
-   - X/Twitter: "SC: X@handle" — TANPA spasi setelah X, pakai handle asli
-     (uploader_id, bukan nama display — Exilenova_plus bukan Exilenova+)
-   - YouTube/sumber lain: "SC: Nama Channel" — tanpa prefix X
+   rata kiri di bawah video. Judul auto Title Case (tiap kata huruf
+   pertama kapital, termasuk kata sambung).
+   Format sumber (build_src_line), wmsrc = nama sumber watermark asli:
+   - X/Twitter + WM: "SC: <wm> X@handle" — tanpa kutip
+   - X/Twitter tanpa WM: "SC: X@handle" — TANPA spasi setelah X, pakai
+     handle asli (uploader_id, bukan nama display — Exilenova_plus bukan
+     Exilenova+)
+   - YouTube/sumber lain + WM: "SC: <wm>" (WM = nama channel sumber)
+   - YouTube/sumber lain tanpa WM: "SC: Nama Channel" — tanpa prefix X
    rata kiri di bawah video, "TikTok: m4croNews" / "IG: m4croNews" rata
    tengah bawah (SEKALI saja), gear-$ logo kiri atas, logo M bersih kanan
    bawah, glow kiri bawah.
 
-Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/] [--title "..."]`
+Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/] [--title "..."] [--wmsrc "CNN"]`
 (Python yang punya Pillow+numpy — Hermes venv atau sistem python)
 
 ## Layout constants (render.py) — hasil ukur pixel dari template
@@ -69,7 +78,10 @@ Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/] [--title 
   [34,30,27,24,22]
 - SRC_Y=1215 / DATE_Y=1262, rata KIRI (left_x = VID_LEFT), F_SRC=30 F_DATE=26
 - Format sumber: X -> "SC: X@handle" (tanpa spasi, uploader_id);
-  YouTube -> "SC: Nama Channel" (uploader)
+  YouTube -> "SC: Nama Channel" (uploader). Kalau ada WM (--wmsrc):
+  X -> "SC: <wm> X@handle", YouTube -> "SC: <wm>".
+- Judul: Title Case otomatis (tiap kata huruf pertama kapital, termasuk
+  kata sambung) — berlaku untuk tweet asli maupun --title
 - HANDLE_Y=1770 / HANDLE_LINE_H=50, F_HANDLE=34, Poppins regular, rata tengah
 - GEAR_BOX=(4,0,212,180), LOGO_M_BOX=(870,1720,95,95)
 - Glow: assets_glow.png dari template asli, resize 360x276, posisi kiri bawah

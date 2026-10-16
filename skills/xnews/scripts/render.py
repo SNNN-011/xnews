@@ -97,6 +97,12 @@ def _wrap(draw: ImageDraw.ImageDraw, text: str, f_pop, f_emoji, max_w: int) -> l
     return lines
 
 
+def _title_case(text: str) -> str:
+    """Tiap kata: huruf pertama kapital. Sisa kata dibiarkan (biar singkatan
+    kayak 'AS'/'US' gak berubah jadi 'As'/'Us')."""
+    return " ".join(w[:1].upper() + w[1:] for w in text.split())
+
+
 def _make_glow(size: int = 520, max_alpha: int = 48) -> Image.Image:
     """Glow radial halus kiri bawah (efek bokeh dari template)."""
     y, x = np.mgrid[0:size, 0:size]
@@ -128,6 +134,7 @@ def build_overlay(title: str, src_line: str, handle_lines: list,
 
     # --- judul (opsional): di zona kosong antara logo & video ---
     if title:
+        title = _title_case(title)
         font = None
         f_emoji = None
         lines = []

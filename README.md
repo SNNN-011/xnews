@@ -34,7 +34,7 @@ python skills/xnews/scripts/xnews.py https://x.com/user/status/xxxxx
 ### Opsi
 
 ```bash
-python skills/xnews/scripts/xnews.py <url> --seg 45 --out hasil/ --title "Judul Bahasa Indonesia"
+python skills/xnews/scripts/xnews.py <url> --seg 45 --out hasil/ --title "Judul Bahasa Indonesia" --wmsrc "CNN"
 ```
 
 | Flag | Default | Fungsi |
@@ -42,10 +42,25 @@ python skills/xnews/scripts/xnews.py <url> --seg 45 --out hasil/ --title "Judul 
 | `--seg` | 60 | Panjang segmen kalau video >3 menit |
 | `--out` | `output/` | Folder tujuan |
 | `--title` | (teks tweet) | Override judul — dipakai agent buat judul Bahasa Indonesia hasil translate |
+| `--wmsrc` | (kosong) | Nama sumber dari watermark di video — dipakai agent yang lihat frame |
 
-**Judul Bahasa Indonesia:** script render pakai teks tweet apa adanya.
-Agent Hermes yang translate judul ke Bahasa Indonesia pakai LLM-nya
-sendiri, lalu render ulang dengan `--title "judul Indonesia"`.
+**Judul:** otomatis Title Case (tiap kata huruf pertama kapital, termasuk
+kata sambung). Script render pakai teks tweet apa adanya. Agent Hermes
+yang translate judul ke Bahasa Indonesia pakai LLM-nya sendiri, lalu
+render ulang dengan `--title "judul Indonesia"`.
+
+**Sumber (baris SC):** agent Hermes lihat frame video (vision) buat cari
+watermark sumber asli — video repost dari YouTube biasanya ada. Kalau ada,
+agent render ulang dengan `--wmsrc "NamaSumber"`:
+
+| Kondisi | Baris SC di video |
+|---------|-------------------|
+| X, tanpa WM | `SC: X@handle` |
+| X, ada WM | `SC: NamaSumber X@handle` |
+| YouTube, tanpa WM | `SC: Nama Channel` |
+| YouTube, ada WM | `SC: NamaSumber` |
+
+Script `xnews.py` tidak bisa baca watermark sendiri — itu kerjaan agent.
 
 ## Output: Video + Caption IG
 
