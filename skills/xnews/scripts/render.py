@@ -6,8 +6,10 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-FONT_DIR = Path(__file__).parent / "fonts"
-ASSET_DIR = Path(__file__).parent
+_HERE = Path(__file__).parent
+# Aset bisa di skills/xnews/assets (../assets) atau sefolder script (flat).
+ASSET_DIR = (_HERE.parent / "assets") if (_HERE.parent / "assets").exists() else _HERE
+FONT_DIR = (_HERE / "fonts") if (_HERE / "fonts").exists() else ASSET_DIR
 EMOJI_FONT = Path(r"C:\Windows\Fonts\seguiemj.ttf")
 W, H = 1080, 1920
 
