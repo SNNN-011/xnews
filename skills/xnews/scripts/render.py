@@ -10,7 +10,11 @@ _HERE = Path(__file__).parent
 # Aset bisa di skills/xnews/assets (../assets) atau sefolder script (flat).
 ASSET_DIR = (_HERE.parent / "assets") if (_HERE.parent / "assets").exists() else _HERE
 FONT_DIR = (_HERE / "fonts") if (_HERE / "fonts").exists() else ASSET_DIR
-EMOJI_FONT = Path(r"C:\Windows\Fonts\seguiemj.ttf")
+EMOJI_FONT = next((p for p in (
+    Path(r"C:\Windows\Fonts\seguiemj.ttf"),
+    Path("/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf"),
+    Path("/System/Library/Fonts/Apple Color Emoji.ttc"),
+) if p.exists()), None)
 W, H = 1080, 1920
 
 # --- layout LANDSCAPE (default) ---
@@ -143,7 +147,12 @@ def build_overlay(title: str, src_line: str, handle_lines: list,
         zone_h = tz_bot - tz_top
         for px in FONT_STEPS:
             font = _load(px, bold=False)
-            f_emoji = ImageFont.truetype(str(EMOJI_FONT), px)
+            f_emoji = font
+            if EMOJI_FONT:
+                try:
+                    f_emoji = ImageFont.truetype(str(EMOJI_FONT), px)
+                except OSError:
+                    pass  # bitmap emoji font (Noto di Linux) cuma 1 ukuran
             lines = _wrap(d, title, font, f_emoji, MAX_TITLE_W)
             total_h = len(lines) * int(px * 1.3)
             if len(lines) <= 4 and total_h <= zone_h:
@@ -255,7 +264,10 @@ def render(video_in: str, title: str, src_line: str, handle_lines: list,
             "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart",
             out_path])
     import subprocess
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    if r.returncode != 0:
-        raise RuntimeError(f"ffmpeg gagal: {r.stderr.strip()[-500:]}")
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        if r.returncode != 0:
+            raise RuntimeError(f"ffmpeg gagal: {r.stderr.strip()[-500:]}")
+    finally:
+        out_png.unlink(missing_ok=True)
     return out_path

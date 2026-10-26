@@ -16,6 +16,7 @@ Env vars (opsional):
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from datetime import date as _date
@@ -193,12 +194,16 @@ def main():
     print(f"[4/4] render {len(pts)} segmen -> {outdir}")
 
     made = []
-    for i, (s, e) in enumerate(pts, 1):
-        name = outdir / f"{meta['id']}_{i:02d}.mp4" if len(pts) > 1 else outdir / f"{meta['id']}.mp4"
-        render(str(video), title, src_line, handle_lines, today,
-               str(name), start=s, end=e, portrait=portrait)
-        made.append(name)
-        print(f"    -> {name}")
+    try:
+        for i, (s, e) in enumerate(pts, 1):
+            name = outdir / f"{meta['id']}_{i:02d}.mp4" if len(pts) > 1 else outdir / f"{meta['id']}.mp4"
+            render(str(video), title, src_line, handle_lines, today,
+                   str(name), start=s, end=e, portrait=portrait)
+            made.append(name)
+            print(f"    -> {name}")
+    finally:
+        if made:
+            shutil.rmtree(vdir, ignore_errors=True)
     print(f"SELESAI: {len(made)} file")
 
 
