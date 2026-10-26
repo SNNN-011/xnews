@@ -29,7 +29,9 @@ python skills/xnews/scripts/xnews.py https://x.com/user/status/xxxxx
 
 - Video ≤3 menit → render full
 - Video >3 menit → dipotong per 60 detik (bisa diatur `--seg 30`)
-- Output: `output/<video-id>.mp4` (1080x1920, siap upload TikTok/Reels/Shorts)
+- Output: `output/<video-id>.mp4` (1080x1920, siap upload TikTok/Reels/Shorts).
+  File sementara (video sumber, frame, overlay PNG) otomatis dihapus setelah
+  render, jadi folder output hanya berisi video final.
 
 ### Opsi
 
