@@ -1,25 +1,40 @@
 ---
 name: xnews
-description: "X/Twitter video -> 9:16 news repost template."
-version: 2.0.0
+description: "News link or X video to 9:16 reels or 4:5 poster."
+version: 3.0.0
 author: Hermes Agent
 license: MIT
 metadata:
   hermes:
-    tags: [twitter, x.com, video, 9:16, ffmpeg, news, template, repost]
+    tags: [twitter, x.com, video, 9:16, poster, 4:5, instagram, ffmpeg, news, template]
 ---
 
-# xnews — X/Twitter video -> template 9:16 news repost
+# xnews — berita dari X/link -> video reels 9:16 atau poster 4:5
 
 ## When to use
-User wants to repost X/Twitter video news as 9:16 vertical: original 16:9
-video centered-top on black canvas, headline from tweet text, source credit
-and render date below video, channel branding (gear-$ logo, M logo, glow).
+Dua bentuk output dari satu skill ini:
 
-**OUTPUT WAJIB: video 9:16 + caption IG** — dikerjain bareng dalam satu
-request, biar user tinggal post ke IG tanpa langkah tambahan.
-Repo: `skills/xnews/` — `scripts/xnews.py` (orchestrator),
-`scripts/render.py` (template), `scripts/setup.py` (auto-install).
+- **video reels 9:16** — repost video berita X/Twitter: video 16:9 di atas-tengah,
+  judul dari teks tweet, kredit sumber + tanggal, branding channel.
+- **poster 4:5** — kartu berita dari X post, blog, web, atau artikel: foto + headline
+  besar di kanvas 1080x1350.
+
+Dua-duanya WAJIB keluar bareng **caption IG** (gaya m4cro.news) — bukan opsional.
+Repo: `skills/xnews/` — `scripts/xnews.py` (orchestrator video),
+`scripts/render.py` (template video), `scripts/setup.py` (auto-install),
+`templates/poster-4x5.html` (template poster), `scripts/grade_photo.py`,
+`scripts/fetch_commons.py`, `scripts/poster_checks.js`.
+
+## LANGKAH 0 — tanya bentuknya dulu
+Kalau user BELUM menyebut bentuk output, tanya dulu SATU pertanyaan:
+
+> "Mau dibikin poster (gambar 4:5) atau video reels (9:16)?"
+
+- jawab **poster** -> kerjakan `## Pipeline POSTER (4:5)`
+- jawab **video / reels / repost video** -> kerjakan `## Pipeline`
+
+Kalau user sudah menyebut sendiri ("bikinin poster", "jadiin reels"), jangan tanya
+lagi, langsung ke pipeline-nya. Jangan pernah render dua-duanya tanpa diminta.
 
 ## FIRST RUN: setup otomatis
 Pas pertama kali pakai di laptop baru (atau kalau ada error "command not
@@ -68,6 +83,34 @@ API key (opsional, cuma buat fallback transkrip kalau tweet kosong).
 Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/] [--title "..."] [--wmsrc "CNN"]`
 (Python yang punya Pillow+numpy — Hermes venv atau sistem python)
 
+## Pipeline POSTER (4:5) — dari link mana pun
+Input boleh X post, blog, web, atau artikel. Output: `poster.png` 1080x1350 + caption IG.
+
+1. **Baca sumbernya.** `web_extract` untuk blog/artikel/web. Untuk X: `web_search`
+   cerita yang sama dan/atau baca DOM lewat browser Hermes (`browser_exec`, `new_tab` +
+   `js`). Simpan URL asli buat kredit.
+2. **Tulis copy dulu, sebelum pixel.** Headline 3-4 baris pendek, UPPERCASE, maksimal
+   ~15 karakter per baris di 86px (`--headline-measure: 880px`). Baris terakhir = kata
+   aksen. Jangan mengarang angka, nama, atau kutipan.
+3. **Ambil gambar dari link dulu.** Cek semua `img src`, `og:image`, `twitter:image`.
+   Verifikasi sebelum dipakai: HTTP 200, byte wajar, magic number gambar asli, lebar
+   >= 1200px. Kalau link TIDAK punya gambar yang layak:
+   `python scripts/fetch_commons.py "<subjek>"` lalu `--get <n>` (Wikimedia Commons,
+   cetak judul + lisensi buat kredit). Jangan pakai placeholder.
+4. **Grade fotonya** (baked, bukan CSS filter):
+   `python scripts/grade_photo.py <foto-raw> <project>/assets/photo-graded.png`
+5. **Bangun halaman.** Copy `templates/poster-4x5.html` -> `<project>/index.html`, lalu
+   copy `assets/logoM.png`, `assets/gear.png`, `assets/glow.png`,
+   `assets/montserrat-400.woff2`, `assets/montserrat-800.woff2` ke `<project>/assets/`.
+   Ganti 4 `<span class="ln">`, teks handle, dan `--accent`. Detail angka:
+   `references/poster-layout.md`.
+6. **Render + asersi + ekspor** lewat `browser_exec`: set viewport 1080x1350
+   (`Emulation.setDeviceMetricsOverride`), reload, tunggu `document.fonts.ready` +
+   semua `img.complete`, jalankan `scripts/poster_checks.js` via `js(...)`, lalu
+   `Page.captureScreenshot` -> `poster.png`.
+7. **Caption IG** pakai `references/caption-research.md` (spesifikasi sama dengan video),
+   lalu kirim `MEDIA:<poster.png>` + caption + tabel angka hasil ukur.
+
 ## Layout constants (render.py) — hasil ukur pixel dari template
 - VID 1025x577 at (27, 602) — margin kiri-kanan ~28px, video di atas-tengah
 - Layout LANDSCAPE: TITLE_ZONE 400-600, video slot 1025x577 at (27,602)
@@ -111,6 +154,29 @@ Pakai: `python scripts/xnews.py <x.com-url> [--seg 60] [--out output/] [--title 
   bareng logo M dan muncul nyempil di tengah bawah). Pakai scan grup kolom
   terang, ambil grup yang benar, crop persis bbox-nya.
 
+## Pitfall poster (verified)
+- **`vision_analyze` mengarang "garis tajam" pada gradient mulus.** Dua kali melaporkan
+  potongan foto padahal profil baris turun 13.2 -> 3.0 -> 1.5 -> 0. Pakai
+  `getBoundingClientRect` + profil baris piksel; vision cuma buat "kerasa sesak/kosong".
+- **`image_generate` bisa gagal karena billing** (HTTP 402 insufficient_funds). Bukan
+  API key yang hilang — jatuh ke gambar sumber, lalu Commons, lalu grafik CSS.
+- **Openverse sering HTTP 500.** Wikimedia Commons lewat `scripts/fetch_commons.py`
+  jalur gratis yang jalan. URL thumb manual ditolak ("Use thumbnail sizes listed") —
+  pakai `thumburl` dari API.
+- **Satu `@font-face` per weight, nama family sama.** Face 900-only + `font-weight: 600`
+  tetap render 900 (mapping naik). Deklarasikan 400/600/700/800/900.
+- **`h1` punya default UA `font-weight: 700`** yang menimpa inherit — set eksplisit di
+  `.headline`.
+- **`var()` yang tokennya dihapus me-invalidasi seluruh deklarasi** -> jatuh ke nilai
+  awal (`opacity: 1` untuk glow). Grep `:root` vs semua `var(--...)` sebelum kirim.
+- **Skala pratinjau jangan mengubah hasil ekspor.** `transform: scale()` bikin layout box
+  tetap 1080px (scroll horizontal di HP). Bungkus `.stage` dengan ukuran
+  `calc(canvas * var(--fit))` dan kunci `--fit: 1` saat viewport >= kanvas.
+- **Nama file foto salah = gagal senyap.** Template memuat `assets/photo-graded.png`;
+  kasih nama lain dan blok foto kosong padahal semua angka lain normal.
+  `images_ok: false` dari `scripts/poster_checks.js` itu tandanya.
+- **Jangan clipping teks biar muat.** Pendekkan barisnya, jangan potong kalimat.
+
 ## Research & Caption IG (BAGIAN DARI OUTPUT — bukan opsional)
 Setiap request video WAJIB menghasilkan video + caption IG sekaligus.
 Baca `references/caption-research.md` sebelum nulis caption.
@@ -127,7 +193,10 @@ Alur lengkap satu request:
 4. Kirim ke user: MEDIA:<video> + teks caption siap copy-paste ke IG
 
 ## Verification
-Render testsrc2 5s, ffprobe stream duration harus 5.0s & nb_frames~150,
+Poster: jalankan `scripts/poster_checks.js` di `browser_exec` — harus `canvas_ok: true`,
+`poster_at_origin: true`, `overflow: [0, 0]`, `line_wraps` semua 1, `images_ok: true`,
+`fonts_loaded` dua-duanya true. Lalu pastikan file ekspor benar 1080x1350 (Pillow).
+Video: render testsrc2 5s, ffprobe stream duration harus 5.0s & nb_frames~150,
 lalu vision_analyze frame: judul atas (regular) / 16:9 tengah-atas /
 sumber+tanggal kiri bawah video / logo gear kiri atas / logo M kanan bawah
 / glow kiri bawah / bg hitam bersih.

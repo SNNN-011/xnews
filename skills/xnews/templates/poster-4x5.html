@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Poster 4:5</title>
+<!--
+  TEMPLATE 1080x1350 (4:5) — m4cro.news house style.
+  Ganti hanya: 4 baris <span class="ln">, teks handle, --accent, dan path assets/.
+  Foto: taruh kredit + lisensi di komentar ini kalau bukan milik sendiri.
+  Font: Montserrat 400/600/700/800/900 (SIL OFL), file lokal di assets/.
+-->
+<style>
+@font-face{font-family:"Mont";src:url("assets/montserrat-800.woff2") format("woff2");font-weight:800;font-display:block}
+@font-face{font-family:"Mont";src:url("assets/montserrat-400.woff2") format("woff2");font-weight:400;font-display:block}
+
+:root{
+  --canvas-w:1080;
+  --canvas-h:1350;
+
+  --ground:#000000;
+  --ink:#ffffff;
+  --accent:#156ead;          /* biru m4cro; hijau lama #3FA600 */
+  --photo-h:800px;
+
+  --mark-h:68px;
+  --gear-w:118px;
+  --glow-w:470px;
+
+  --headline-size:86px;
+  --headline-leading:0.93;
+  --headline-measure:880px;
+
+  --handle-size:21px;
+  --margin:36px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#0b0b0b}
+body{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  font-family:"Mont",Impact,sans-serif;
+  font-weight:800;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* stage = ukuran SETELAH skala: mencegah scroll horizontal saat pratinjau mengecil */
+.stage{
+  position:relative;
+  width:calc(var(--canvas-w) * 1px * var(--fit,1));
+  height:calc(var(--canvas-h) * 1px * var(--fit,1));
+}
+.poster{
+  position:absolute;
+  top:0; left:0;
+  width:calc(var(--canvas-w) * 1px);
+  height:calc(var(--canvas-h) * 1px);
+  background:var(--ground);
+  overflow:hidden;
+  transform:scale(var(--fit,1));
+  transform-origin:top left;
+}
+
+/* foto: blok atas saja, sisanya hitam */
+.photo{
+  position:absolute;
+  z-index:0;
+  inset:0 0 auto 0;
+  height:var(--photo-h);
+  overflow:hidden;
+}
+.photo img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:56% 26%;
+}
+.photo::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(to bottom,
+    rgba(0,0,0,0) 66%,
+    rgba(0,0,0,.42) 82%,
+    rgba(0,0,0,.88) 93%,
+    #000 100%);
+}
+
+.copy{
+  position:absolute;
+  left:0; right:0;
+  z-index:2;
+  top:calc(var(--photo-h) - 74px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:var(--mark-h);
+}
+.brand .mark{height:var(--mark-h);width:auto;display:block}
+
+.headline{
+  margin-top:50px;
+  max-width:var(--headline-measure);
+  text-align:center;
+  font-size:var(--headline-size);
+  line-height:var(--headline-leading);
+  letter-spacing:-.015em;
+  color:var(--ink);
+  text-transform:uppercase;
+  font-weight:800;          /* wajib: h1 default 700 menimpa inherit */
+}
+.headline span{display:block}
+.headline .accent{color:var(--accent);letter-spacing:.005em}
+
+.handle{
+  position:absolute;
+  left:50%;
+  bottom:46px;
+  transform:translateX(-50%);
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  font-family:"Mont",sans-serif;
+  font-weight:400;          /* watermark jangan bold */
+  font-size:var(--handle-size);
+  letter-spacing:.05em;
+  color:var(--ink);
+  white-space:nowrap;
+  z-index:3;
+}
+.handle .sep{opacity:.55}
+
+.gear{
+  position:absolute;
+  top:44px;
+  left:44px;
+  width:var(--gear-w);
+  height:auto;
+  opacity:.88;
+  z-index:3;
+}
+
+.glow{
+  position:absolute;
+  left:0;
+  bottom:0;
+  width:var(--glow-w);
+  height:auto;
+  mix-blend-mode:screen;
+  z-index:1;
+  pointer-events:none;
+  -webkit-mask-image:radial-gradient(140% 140% at 0% 100%, #000 0%, rgba(0,0,0,.35) 45%, rgba(0,0,0,0) 76%);
+  mask-image:radial-gradient(140% 140% at 0% 100%, #000 0%, rgba(0,0,0,.35) 45%, rgba(0,0,0,0) 76%);
+}
+
+.grain{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.16;
+  mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/><feColorMatrix type='saturate' values='0'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='.55'/></svg>");
+}
+</style>
+</head>
+<body>
+
+<div class="stage"><main class="poster" id="poster" aria-label="Poster berita 4:5">
+  <div class="photo">
+    <img src="assets/photo-graded.png" alt="" id="hero">
+  </div>
+
+  <div class="copy">
+    <div class="brand" id="brand"><img class="mark" src="assets/logoM.png" alt="Logo M"></div>
+    <h1 class="headline" id="headline">
+      <span class="ln">BARIS SATU</span>
+      <span class="ln">BARIS DUA</span>
+      <span class="ln">BARIS TIGA,</span>
+      <span class="ln accent">KATA KUNCI</span>
+    </h1>
+  </div>
+
+  <img class="glow" src="assets/glow.png" alt="">
+  <img class="gear" src="assets/gear.png" alt="Ikon gear dolar">
+  <div class="handle" id="handle">TikTok &amp; IG <span class="sep">|</span> @m4cronews</div>
+  <div class="grain"></div>
+</main></div>
+
+<script>
+// Skala pratinjau: 1:1 saat viewport >= kanvas (ekspor), mengecil di layar kecil.
+(function fit(){
+  var w = window.innerWidth, h = window.innerHeight;
+  var s = (w >= 1080 && h >= 1350) ? 1 : Math.min(1, (w - 40) / 1080, (h - 40) / 1350);
+  document.documentElement.style.setProperty('--fit', s.toFixed(4));
+})();
+window.addEventListener('resize', function(){ location.reload(); }, {passive:true});
+</script>
+</body>
+</html>
