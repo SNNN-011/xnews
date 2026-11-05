@@ -3,7 +3,7 @@
 
 Usage:
     python grade_photo.py <input> <output> [--gamma 0.88] [--contrast 1.16]
-                                [--tint 0.93,0.985,1.06] [--vignette 0.42]
+                                [--tint 0.93,0.985,1.06] [--vignette 0.42] [--gain 1.0]
 
 Why bake it instead of CSS filters: chained CSS `contrast()` then `brightness()`
 crushed the shadows to pure black on a real news photo (poster rows measured 9/255
@@ -23,6 +23,7 @@ def main() -> int:
     ap.add_argument("--contrast", type=float, default=1.16)
     ap.add_argument("--tint", default="0.93,0.985,1.06", help="r,g,b multipliers")
     ap.add_argument("--vignette", type=float, default=0.42, help="0 disables")
+    ap.add_argument("--gain", type=float, default=1.0, help="<1 darkens overall (bright daylight sources)")
     a = ap.parse_args()
 
     if os.path.abspath(a.src) == os.path.abspath(a.dst):
@@ -47,7 +48,7 @@ def main() -> int:
 
     g = np.power(lum, a.gamma)
     g = np.clip((g - 0.5) * a.contrast + 0.5, 0.0, 1.0)
-    out = np.clip(g[:, :, None] * tint[None, None, :], 0.0, 1.0)
+    out = np.clip(g[:, :, None] * a.gain * tint[None, None, :], 0.0, 1.0)
 
     if a.vignette > 0:
         h, w = g.shape

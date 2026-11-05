@@ -176,6 +176,19 @@ Input boleh X post, blog, web, atau artikel. Output: `poster.png` 1080x1350 + ca
   kasih nama lain dan blok foto kosong padahal semua angka lain normal.
   `images_ok: false` dari `scripts/poster_checks.js` itu tandanya.
 - **Jangan clipping teks biar muat.** Pendekkan barisnya, jangan potong kalimat.
+- **Video sumber tidak perlu diunduh penuh.** `ffmpeg -ss 36 -i "<url mp4>" -frames:v 1`
+  memakai HTTP range request: 1 frame 4K keluar dalam ~2 detik, bukan 114 MB.
+  Cek `Content-Length` dulu (HEAD) biar tahu angkanya sebelum menyentuh file besar.
+- **Frame video hampir selalu punya teks/label bawaan** (chip model, progress bar, UI).
+  Crop band atas/bawah (mis. 10%-86% tinggi) sampai bersih, jangan biarkan teks video
+  bertabrakan dengan headline poster.
+- **`Page.captureScreenshot` timeout 5s kalau di call yang sama dengan `js()`/reload.**
+  Pisah: call 1 reload + asersi, call 2 `cdp('Page.captureScreenshot')` sendirian.
+  Kalau tetap timeout, ulang sekali — layer sudah ter-cache dan langsung sukses.
+- **Foto siang hari bikin poster washed out.** `grade_photo.py --gain 0.45` (ditambah
+  gamma ~1.35) menurunkan luminance baris atas dari ~100 ke ~55, baru setara house style.
+- **Gear/logo putih di atas area foto terang kehilangan tepi** (bukan terpotong).
+  Kasih `filter:drop-shadow(...)` di elemennya, jangan pindahkan posisinya.
 
 ## Research & Caption IG (BAGIAN DARI OUTPUT — bukan opsional)
 Setiap request video WAJIB menghasilkan video + caption IG sekaligus.

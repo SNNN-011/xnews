@@ -145,6 +145,8 @@ body{
   width:var(--gear-w);
   height:auto;
   opacity:.88;
+  /* foto terang di belakang gear bikin tepinya hilang -> kasih bayangan pemisah */
+  filter:drop-shadow(0 0 14px rgba(0,0,0,.55)) drop-shadow(0 2px 6px rgba(0,0,0,.4));
   z-index:3;
 }
 
