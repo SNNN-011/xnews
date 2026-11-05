@@ -189,6 +189,21 @@ Input boleh X post, blog, web, atau artikel. Output: `poster.png` 1080x1350 + ca
   gamma ~1.35) menurunkan luminance baris atas dari ~100 ke ~55, baru setara house style.
 - **Gear/logo putih di atas area foto terang kehilangan tepi** (bukan terpotong).
   Kasih `filter:drop-shadow(...)` di elemennya, jangan pindahkan posisinya.
+- **`browser_exec` mati dengan "no registered browser plugin has that name".**
+  `browser.cloud_provider: nous` menunjuk plugin cloud yang tidak terdaftar. Fix:
+  `hermes config set browser.cloud_provider local` (langsung jalan lagi, sudah dicek).
+- **Chrome/Edge sistem bisa crash "Abnormal renderer termination" di halaman poster**
+  (headless CLI, halaman `file://` + transform + blend). Bukan bug CSS kita: halaman
+  yang sama render normal di Chromium Playwright. Pakai
+  `python scripts/render_shell.py index.html poster.png` — otomatis memilih
+  `chrome-headless-shell` Playwright, lalu fallback Chrome/Edge sistem.
+- **`file://` menyajikan gambar lama dari cache.** Ganti `photo-graded.png` lalu render
+  ulang, hasilnya masih crop lama (peci tetap "kepotong"). Selalu
+  `Network.setCacheDisabled(true)` + URL `?nc=<n>` tiap render ulang.
+- **Potret resmi biasanya nyaris tanpa headroom** (kepala ~3% dari tepi atas). Crop apa pun
+  bikin peci menempel bingkai. Kasih `transform:translateY(48px) scale(1.12)` di
+  `.photo img` dan turunkan `--vignette` ke ~0.12-0.26 supaya latar di atas kepala
+  masih terang dan siluet peci kebaca.
 
 ## Research & Caption IG (BAGIAN DARI OUTPUT — bukan opsional)
 Setiap request video WAJIB menghasilkan video + caption IG sekaligus.
